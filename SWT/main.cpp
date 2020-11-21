@@ -100,26 +100,15 @@ int main (int argc, char **argv)
     //char Test[256];
     char Slogpfad[256]; //hier wird der Programmpfad gespeichert
     getcwd(Slogpfad, 256); //der Programmpfad ist jetzt in 'temp' gespeichert
-    //strcpy(Test,Slogpfad);
-    strcat(Slogpfad, "\\LWLog.csv"); //in 'pfad' ist jetzt der absolute Pfad zu 'datei.txt' gespeichert.
-    //strcat(Test, "\\LWLog_2.csv"); //in 'pfad' ist jetzt der absolute Pfad zu 'datei.txt' gespeichert.
+    strcat(Slogpfad, "\\LWLog.csv"); 
     std::ofstream outFile0(Slogpfad);           
     outFile0 << "Datum Zeit" << ";" << "Leitwert" << ";" << "Temperatur" <<std::endl;
     outFile0.close();
-    //FILE *fp;
-
-    //fp = fopen( Test, "w+");
-
     char Zielpfad[50];
 
-    //strcpy(Zielpfad,"//192.168.70.73/SPS_Daten/");
     strcpy(Zielpfad,"//tbtvsrv01/DATASHARE/SPS_Daten/");
     strcat(Zielpfad,IPEndstellen);
     strcat(Zielpfad,"/LW.txt");
-
-    //printf ("\r\nPfad: %s",&Zielpfad);
-
-    //Sendestring beschreiben Initial
 
     send[0] = 0xFE;
     send[1] = 0x00;
@@ -154,39 +143,16 @@ int main (int argc, char **argv)
                             MessageBox (NULL, (LPCTSTR)lpMsgBuf, "Error: ReadFile", MB_OK | MB_ICONINFORMATION);
                             LocalFree (lpMsgBuf);
                         }
-
                         else
-
                         { // Daten erhalten ...
-
-                        //            printf("Daten erhalten ");  
-
-                        //            printf("\r\nLW: ;%.1d; %.1d; %.1d; %.1d; %.1d; %.1d; %.1d; %.1d; %.1d; %.1d; %.1d", empfang[0], empfang[1], empfang[2], empfang[3], empfang[4], empfang[5], empfang[6], empfang[7], empfang[8], empfang[9], empfang[10]);            
 
                         switch (send[0]){
 
                             case 0xFE:
 
-                              //printf("\r\nLW: ;0=%.1d; 1=%.1d; 2=%.1d; 3=%.1d; 4=%.1d; 5=%.1d; \n\r 6=%.1d; 7=%.1d; 8=%.1d; 9=%.1d; 10=%.1d; 11=%.1d;%X; %X;", empfang[0], empfang[1], empfang[2], empfang[3], empfang[4], empfang[5], empfang[6], empfang[7],empfang[8],empfang[9],empfang[10],empfang[11],send[0], send[2]);                                           
-
                               if(empfang[0] == 254 && (empfang[1] == 5 || empfang[1] == 3 )&& (empfang[2] == 38 || empfang[2] == 52) && (empfang[3] == 129 || empfang[3] == 183 || empfang[3] == 121 || empfang[3] == 120 ) && send[0] == 0xFE && send[2] == 0x3D)
 
                               {
-
-                                 //printf("Ausgabe Step 0 %d  %d \n\r",empfang[6], empfang[7]);
-
-                                 //fprintf(fp,"\r\nLog Aktiv, Aktueller Leitwert:; ;%.1f ;;bei;;; ;%.1f ;gradC", LWF, TempF);
-
-                                 //fprintf(fp,"\r\nLW: ;%.1d; %.1d; %.1d; %.1d; %.1d; %.1d; %.1d; %.1d; %.1d; %.1d; %.1d", empfang[0], empfang[1], empfang[2], empfang[3], empfang[4], empfang[5], empfang[6], empfang[7], empfang[8], empfang[9], empfang[10]);   
-
-
-	                              //            printf("255-empfang[7]: %d \n\r", 255-empfang[6]);
-	
-	                              //            printf("256*(255-empfang[7])): %d \n\r", 256*(255-empfang[6])); 
-	
-	                              //            printf("empfang[8]: %d \n\r",empfang[7]);
-
-
 
                             	// empfangene Daten zu leitwert Decodieren
 
@@ -218,15 +184,10 @@ int main (int argc, char **argv)
 
                             case 0xFD:
 
-                                //printf("\r\nLW: ;0=%.1d; 1=%.1d; 2=%.1d; 3=%.1d; 4=%.1d; 5=%.1d; \n\r 6=%.1d; 7=%.1d; 8=%.1d; 9=%.1d; 10=%.1d; 11=%.1d;%X; %X;", empfang[0], empfang[1], empfang[2], empfang[3], empfang[4], empfang[5], empfang[6], empfang[7],empfang[8],empfang[9],empfang[10],empfang[11],send[0], send[2]);                                           
-
-                                //printf("\r\nLW: ;0=%.1d; 1=%.1d; 2=%.1d; 3=%.1d; 4=%.1d; 5=%.1d; 6=%.1d; 7=%.1d; 8=%.1d; 9=%.1d;%X; %X;", empfang[0], empfang[1], empfang[2], empfang[3], empfang[4], empfang[5], empfang[6], empfang[7],empfang[8],empfang[9],send[0], send[2]);
-
                                 if(empfang[0] == 253 && (empfang[1] == 5 || empfang[1] == 3) && (empfang[2] == 25 || empfang[2] == 11) && (empfang[3] == 121 || empfang[3] == 183|| empfang[3] == 182 || empfang[3] == 120) && send[0] == 0xFD && send[2] == 0x02)
 
                                     {
 
-                                        //printf("Ausgabe Step 1 %d  %d \r\n",empfang[6], empfang[7]);
                                         // empfangene Daten zu Temp Decodieren
                                         Temp = (256*(255-empfang[6]))+empfang[7];
                                         TempF = Temp*0.1;
@@ -242,9 +203,6 @@ int main (int argc, char **argv)
 
                                         printf ("Log Aktiv, Aktuelle Temperatur:  %.1f C \n\r", TempF);
 
-                                        //printf ("\r\nWerte: %.1d, %.1d, %.1d, %.1d, %.1d, %.1d, %.1d, %.1d, %.1d, %.1d, %.1d", empfang[0], empfang[1], empfang[2], empfang[3], empfang[4], empfang[5], empfang[6], empfang[7], empfang[8], empfang[9], empfang[10]);
-                                        //fprintf(fp,"\r\nLog Aktiv, Aktueller Leitwert:; ;%.1f ;;bei;;; ;%.1f ;gradC", LWF, TempF);
-                                        //fprintf(fp,"\r\nTemp: ;%.1d; %.1d; %.1d; %.1d; %.1d; %.1d; %.1d; %.1d; %.1d; %.1d; %.1d", empfang[0], empfang[1], empfang[2], empfang[3], empfang[4], empfang[5], empfang[6], empfang[7], empfang[8], empfang[9], empfang[10]);   
                                         // Wert in Serverfile schreiben                                                                                                                                                                                                                                                                            
                                         std::ofstream outFile(Zielpfad);
                                         outFile << LW << 'L' << Temp << 'T' <<std::endl;
@@ -253,29 +211,19 @@ int main (int argc, char **argv)
                                         // simple Logfile erstellen .............................................
 
                                     	if(simple_log != 1){
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
                                             time_t Zeitstempel;
                                             tm *nun;
                                             Zeitstempel = time(0);
                                             nun = localtime(&Zeitstempel);
-
                                             char LWSTR[5];
-
                                             float_to_string(LWF,LWSTR);
-
                                             char TempSTR[5];
-
                                             float_to_string(TempF,TempSTR);
-
-                                                                                                                                                                      
-
+                                                                                                                                                                   
                                             char *c;
-
                                             while((c = strchr(LWSTR, '.'))!=NULL)*c = ',';
-
                                             while((c = strchr(TempSTR, '.'))!=NULL)*c = ',';          
-
                                             if(empfang[1] == 5){
 
                                             	printf("\n\rGreisinger GMH3431 erkannt LW: %.2f Temp:%.2f\n\r",LWF *0.1,TempF);
@@ -292,7 +240,6 @@ int main (int argc, char **argv)
                                                  //exit(0);
                                                                             
                                             }                                                                                                                                                                                                                                                                                                                        
-                                            //printf("\n\rLW: %.2f Temp:%.2f\n\r",LWF,TempF);
                                             std::ofstream outFile2(Slogpfad, std::ios::app );           
                                             outFile2 << nun->tm_mday << "." << nun->tm_mon+1 << "." << nun->tm_year+1900 << " " << nun->tm_hour << ":" << nun->tm_min << ":" << nun->tm_sec << ";" << LWSTR << ";" << TempSTR << std::endl;
                                             outFile2.close();                                                                                                                                                                           
@@ -322,18 +269,14 @@ int main (int argc, char **argv)
                                             break;
 
              }
-
-                                                                                                                                                              
+                                                                                                                         
                                     // Sendeanfrage erneut senden
 
                                     WriteFile (hCom, &send, 3, &iBytesWritten, NULL); // Senden der Bytes
 
                                             Sleep(900);       
-
                                }
-
                        }
-
 
                        if (dwEvtMask & EV_ERR)
 
