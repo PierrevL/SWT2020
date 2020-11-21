@@ -8,10 +8,13 @@
 #include <sstream>
 #include <iostream>
 #include <direct.h>
-
+#include "Globaldata.h"
 #define COM_BUFFER_SIZE 256       // Read- und Write-Buffer-Size
 
 #define BD_RATE         CBR_4800 // 9600 Baud
+
+
+
 
 // Hauptprogramm
 
@@ -28,29 +31,21 @@ int main (int argc, char **argv)
     DWORD         dwEvtMask;
     OVERLAPPED    o;
     COMMTIMEOUTS  ct;
+    
+    Globaldata globaldata;
+	printf("%d",globaldata.test);
+	
 
-    unsigned char send[3];
-    uint8_t  empfang[100];
-    TCHAR        szCOM[5];
-    char       comport[5];
-    char  IPEndstellen[5];
-    int    simple_log = 0;
-    int LW = 1000;
-    int Temp;
-    int step = 0;
-    float LWF = 1000.0;
-    int LW_now;
-    float TempF;
 
-	requestComport(comport);
-    requestIP(IPEndstellen);
-    strcpy(szCOM,comport);
+	requestComport(globaldata.comport);
+    requestIP(globaldata.IPEndstellen);
+    strcpy(globaldata.szCOM,globaldata.comport);
 
     memset (&o, 0, sizeof (OVERLAPPED)); 
 
     o.hEvent = CreateEvent (NULL, FALSE, FALSE, NULL); // einen Event setzten
 
-    HANDLE hCom = CreateFile (szCOM, GENERIC_WRITE | GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);      
+    HANDLE hCom = CreateFile (globaldata.szCOM, GENERIC_WRITE | GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);      
 
     if (hCom == INVALID_HANDLE_VALUE)
     { 
@@ -95,7 +90,7 @@ int main (int argc, char **argv)
     // Zwischenspeicher des serial-Drivers einstellen (für read und write):
 
     SetupComm (hCom, COM_BUFFER_SIZE, COM_BUFFER_SIZE);
-    SetCommMask (hCom, dwSetMask); // Empfangssignale definieren
+    SetCommMask (hCom, dwSetMask); // globaldata.empfangssignale definieren
 
     //char Test[256];
     char Slogpfad[256]; //hier wird der Programmpfad gespeichert
@@ -107,22 +102,22 @@ int main (int argc, char **argv)
     char Zielpfad[50];
 
     strcpy(Zielpfad,"//tbtvsrv01/DATASHARE/SPS_Daten/");
-    strcat(Zielpfad,IPEndstellen);
+    strcat(Zielpfad,globaldata.IPEndstellen);
     strcat(Zielpfad,"/LW.txt");
 
-    send[0] = 0xFE;
-    send[1] = 0x00;
-    send[2] = 0x3D;
+    globaldata.send[0] = 0xFE;
+    globaldata.send[1] = 0x00;
+    globaldata.send[2] = 0x3D;
 
-    printf("Sende %2X%2X%2X\n\r",send[0],send[1],send[2]);  
+    printf("Sende %2X%2X%2X\n\r",globaldata.send[0],globaldata.send[1],globaldata.send[2]);  
 
     // Senden des Sendestrings Initial
-    WriteFile (hCom, &send, 3, &iBytesWritten, NULL);
+    WriteFile (hCom, &globaldata.send, 3, &iBytesWritten, NULL);
 
         do  // in Endlos-Schleife auf Empfangssignale warten:
 
         {
-            WaitCommEvent (hCom, &dwEvtMask, &o); // Event mit Empfangssignalen verknüpfen
+            WaitCommEvent (hCom, &dwEvtMask, &o); // Event mit globaldata.empfangssignalen verknüpfen
 
                if (WAIT_OBJECT_0 == WaitForSingleObject (o.hEvent, INFINITE)) // warten bis Event
 
@@ -130,7 +125,7 @@ int main (int argc, char **argv)
                     if (dwEvtMask & EV_RXCHAR) // Zeichen an RxD empfangen:
 
                     {
-                        bRet = ReadFile (hCom, empfang, 100, &dwRead,NULL);
+                        bRet = ReadFile (hCom, globaldata.empfang, 100, &dwRead,NULL);
                                                                                                             
                         if (!bRet)
                         { // Fehlerausgabe:
@@ -146,51 +141,51 @@ int main (int argc, char **argv)
                         else
                         { // Daten erhalten ...
 
-                        switch (send[0]){
+                        switch (globaldata.send[0]){
 
                             case 0xFE:
 
-                              if(empfang[0] == 254 && (empfang[1] == 5 || empfang[1] == 3 )&& (empfang[2] == 38 || empfang[2] == 52) && (empfang[3] == 129 || empfang[3] == 183 || empfang[3] == 121 || empfang[3] == 120 ) && send[0] == 0xFE && send[2] == 0x3D)
+                              if(globaldata.empfang[0] == 254 && (globaldata.empfang[1] == 5 || globaldata.empfang[1] == 3 )&& (globaldata.empfang[2] == 38 || globaldata.empfang[2] == 52) && (globaldata.empfang[3] == 129 || globaldata.empfang[3] == 183 || globaldata.empfang[3] == 121 || globaldata.empfang[3] == 120 ) && globaldata.send[0] == 0xFE && globaldata.send[2] == 0x3D)
 
                               {
 
-                            	// empfangene Daten zu leitwert Decodieren
+                            	// globaldata.empfangene Daten zu leitwert Decodieren
 
-                                LW_now = (256*(255-empfang[6]))+empfang[7];
+                                globaldata.LW_now = (256*(255-globaldata.empfang[6]))+globaldata.empfang[7];
 
-                                printf("Ausgabe LW_now  %d \n\r",LW_now);   
+                                printf("Ausgabe globaldata.LW_now  %d \n\r",globaldata.LW_now);   
 
-                                if (LW_now < LW +30  )
+                                if (globaldata.LW_now < globaldata.LW +30  )
 
                                 {
 
-                                    LW = LW_now;
+                                    globaldata.LW = globaldata.LW_now;
 
-                                    LWF = LW_now*1.0;
+                                    globaldata.LWF = globaldata.LW_now*1.0;
 
                                 }
 
-                                printf ("Log Aktiv Aktueller Leitwert: %.1f \n\r", LWF);
+                                printf ("Log Aktiv Aktueller Leitwert: %.1f \n\r", globaldata.LWF);
 
                             }
 
                              // Sendestring ändern (Temp Anfrage)
 
-                            send[0] = 0xFD;
-                            send[1] = 0x00;
-                            send[2] = 0x02;                            
+                            globaldata.send[0] = 0xFD;
+                            globaldata.send[1] = 0x00;
+                            globaldata.send[2] = 0x02;                            
 
                             break;
 
                             case 0xFD:
 
-                                if(empfang[0] == 253 && (empfang[1] == 5 || empfang[1] == 3) && (empfang[2] == 25 || empfang[2] == 11) && (empfang[3] == 121 || empfang[3] == 183|| empfang[3] == 182 || empfang[3] == 120) && send[0] == 0xFD && send[2] == 0x02)
+                                if(globaldata.empfang[0] == 253 && (globaldata.empfang[1] == 5 || globaldata.empfang[1] == 3) && (globaldata.empfang[2] == 25 || globaldata.empfang[2] == 11) && (globaldata.empfang[3] == 121 || globaldata.empfang[3] == 183|| globaldata.empfang[3] == 182 || globaldata.empfang[3] == 120) && globaldata.send[0] == 0xFD && globaldata.send[2] == 0x02)
 
                                     {
 
-                                        // empfangene Daten zu Temp Decodieren
-                                        Temp = (256*(255-empfang[6]))+empfang[7];
-                                        TempF = Temp*0.1;
+                                        // globaldata.empfangene Daten zu Temp Decodieren
+                                        globaldata.Temp = (256*(255-globaldata.empfang[6]))+globaldata.empfang[7];
+                                        globaldata.TempF = globaldata.Temp*0.1;
                                         // Sendestring ändern (LW Anfrage)
                                         // Consolenzeile "löschen"k
                                         for( int i=0; i<60; ++i )
@@ -201,36 +196,36 @@ int main (int argc, char **argv)
 
                                         // Consolenausgabe
 
-                                        printf ("Log Aktiv, Aktuelle Temperatur:  %.1f C \n\r", TempF);
+                                        printf ("Log Aktiv, Aktuelle Temperatur:  %.1f C \n\r", globaldata.TempF);
 
                                         // Wert in Serverfile schreiben                                                                                                                                                                                                                                                                            
                                         std::ofstream outFile(Zielpfad);
-                                        outFile << LW << 'L' << Temp << 'T' <<std::endl;
+                                        outFile << globaldata.LW << 'L' << globaldata.Temp << 'T' <<std::endl;
                                         outFile.close();
 
                                         // simple Logfile erstellen .............................................
 
-                                    	if(simple_log != 1){
+                                    	if(globaldata.simple_log != 1){
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
                                             time_t Zeitstempel;
                                             tm *nun;
                                             Zeitstempel = time(0);
                                             nun = localtime(&Zeitstempel);
                                             char LWSTR[5];
-                                            float_to_string(LWF,LWSTR);
+                                            float_to_string(globaldata.LWF,LWSTR);
                                             char TempSTR[5];
-                                            float_to_string(TempF,TempSTR);
+                                            float_to_string(globaldata.TempF,TempSTR);
                                                                                                                                                                    
                                             char *c;
                                             while((c = strchr(LWSTR, '.'))!=NULL)*c = ',';
                                             while((c = strchr(TempSTR, '.'))!=NULL)*c = ',';          
-                                            if(empfang[1] == 5){
+                                            if(globaldata.empfang[1] == 5){
 
-                                            	printf("\n\rGreisinger GMH3431 erkannt LW: %.2f Temp:%.2f\n\r",LWF *0.1,TempF);
+                                            	printf("\n\rGreisinger GMH3431 erkannt LW: %.2f Temp:%.2f\n\r",globaldata.LWF *0.1,globaldata.TempF);
 
                                             }                                                                                                                           
 
-                                            if(empfang[1] == 3){
+                                            if(globaldata.empfang[1] == 3){
 
 	                                             printf("\n\r**************************************************************************\n\r");
 	
@@ -250,21 +245,21 @@ int main (int argc, char **argv)
 
                                               }
 
-                                            send[0] = 0xFE;
+                                            globaldata.send[0] = 0xFE;
 
-                                  			send[1] = 0x00;
+                                  			globaldata.send[1] = 0x00;
 
-                                  			send[2] = 0x3D;
+                                  			globaldata.send[2] = 0x3D;
 
                                             break;
                                            
                                             default:
 
-                                            send[0] = 0xFD;
+                                            globaldata.send[0] = 0xFD;
 
-                                      		send[1] = 0x00;
+                                      		globaldata.send[1] = 0x00;
 
-                                      		send[2] = 0x02; 
+                                      		globaldata.send[2] = 0x02; 
 
                                             break;
 
@@ -272,7 +267,7 @@ int main (int argc, char **argv)
                                                                                                                          
                                     // Sendeanfrage erneut senden
 
-                                    WriteFile (hCom, &send, 3, &iBytesWritten, NULL); // Senden der Bytes
+                                    WriteFile (hCom, &globaldata.send, 3, &iBytesWritten, NULL); // Senden der Bytes
 
                                             Sleep(900);       
                                }
