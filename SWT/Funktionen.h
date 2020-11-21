@@ -1,25 +1,36 @@
 #include <windows.h>
-
 #include <stdio.h>
-
 #include <string.h>
-
 #include <iostream>
-
 #include <string>
-
 #include <sstream>
 
  
 
- 
 
- 
+
+void requestComport(char *comport){
+
+	printf ("Greisinger GMH 3400 einschalten und Datenkabel Verbinden");
+    printf ("\r\nPort angeben (BsP.:COM1): ");
+    scanf ("%5s",&comport);
+    printf ("\r\nPort angeben (BsP.:COM1): ");
+}
+
+void requestIP(char *IPEndstellen){    
+    printf ("\r\nGeraete IP Enstellen eingeben (BsP.: 65): ");
+    scanf ("%5s",&IPEndstellen);
+    printf ("\r\n"); 
+  
+}
+
+
+
+
 
 inline unsigned int countdigits(unsigned int x)
 
 {
-
     unsigned count=1;
 
     unsigned int value= 10;
@@ -40,11 +51,6 @@ inline unsigned int countdigits(unsigned int x)
 
  
 
- 
-
- 
-
- 
 
 /** Number on countu**/
 

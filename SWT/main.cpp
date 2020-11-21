@@ -42,22 +42,18 @@ int main (int argc, char **argv)
     int LW_now;
     float TempF;
 
-    printf ("Greisinger GMH 3400 einschalten und Datenkabel Verbinden");
-    printf ("\r\nPort angeben (BsP.:COM1): ");
-    scanf ("%5s",comport);
-    printf ("\r\nGeraete IP Enstellen eingeben (BsP.: 65): ");
-    scanf ("%5s",IPEndstellen);
-    printf ("\r\n"); 
+	requestComport(comport);
+    requestIP(IPEndstellen);
     strcpy(szCOM,comport);
 
-    memset (&o, 0, sizeof (OVERLAPPED)); // Struktur mit 0en füllen
+    memset (&o, 0, sizeof (OVERLAPPED)); 
 
-     o.hEvent = CreateEvent (NULL, FALSE, FALSE, NULL); // einen Event setzten
+    o.hEvent = CreateEvent (NULL, FALSE, FALSE, NULL); // einen Event setzten
 
     HANDLE hCom = CreateFile (szCOM, GENERIC_WRITE | GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);      
 
     if (hCom == INVALID_HANDLE_VALUE)
-    { // Fehlerausgabe:
+    { 
        LPVOID lpMsgBuf;
        FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, GetLastError(),
 
@@ -65,131 +61,79 @@ int main (int argc, char **argv)
 
        MessageBox (NULL, (LPCTSTR)lpMsgBuf, "Error: Conection", MB_OK | MB_ICONINFORMATION);
        LocalFree (lpMsgBuf);
-       return (1); // und tschüß ...
+       return (1); 
     }else{
-
          printf("Connect = ok, Handel: %d\n\r",hCom);
-
     }
 
     dcb.DCBlength = sizeof(DCB);  // Laenge des Blockes MUSS gesetzt sein!
-
     GetCommState (hCom, &dcb);    // COM-Einstellungen holen und aendern
-
     dcb.BaudRate  = BD_RATE;      // Baudrate
-
     dcb.ByteSize  = 8;            // Datenbits
-
     dcb.Parity    = NOPARITY;     // Parität
-
     dcb.StopBits  = ONESTOPBIT;   // Stopbits
-
     dcb.fInX = false;
-
     dcb.fOutX = false;
-
     dcb.fOutxCtsFlow = false;
-
     dcb.fOutxDsrFlow = false;
-
-   dcb.fDsrSensitivity = false;
-
+    dcb.fDsrSensitivity = false;
     dcb.fAbortOnError = false;
-
     dcb.fBinary = true;
-
     dcb.fDtrControl = DTR_CONTROL_ENABLE;
-
     dcb.fRtsControl = RTS_CONTROL_DISABLE;
-
     SetCommState (hCom, &dcb);    // COM-Einstellungen speichern
-
     GetCommTimeouts (hCom, &ct);
 
     // Warte-Zeit [ms] vom Beginn eines Bytes bis zum Beginn des nächsten Bytes
-
     ct.ReadIntervalTimeout         = 1000 / BD_RATE * (dcb.ByteSize + (dcb.Parity == NOPARITY ? 0 : 1) + (dcb.StopBits == ONESTOPBIT ? 1 : 2)) * 2;
-
     ct.ReadTotalTimeoutMultiplier  = 0;  // [ms] wird mit Read-Buffer-Size multipliziert
-
     ct.ReadTotalTimeoutConstant    = 50; // wird an ReadTotalTimeoutMultiplier angehängt
-
     ct.WriteTotalTimeoutMultiplier = 0;
-
     ct.WriteTotalTimeoutConstant   = 0;
-
     SetCommTimeouts (hCom, &ct);
 
- 
     // Zwischenspeicher des serial-Drivers einstellen (für read und write):
 
     SetupComm (hCom, COM_BUFFER_SIZE, COM_BUFFER_SIZE);
-
     SetCommMask (hCom, dwSetMask); // Empfangssignale definieren
 
- 
     //char Test[256];
-
     char Slogpfad[256]; //hier wird der Programmpfad gespeichert
-
     getcwd(Slogpfad, 256); //der Programmpfad ist jetzt in 'temp' gespeichert
-
     //strcpy(Test,Slogpfad);
-
     strcat(Slogpfad, "\\LWLog.csv"); //in 'pfad' ist jetzt der absolute Pfad zu 'datei.txt' gespeichert.
-
     //strcat(Test, "\\LWLog_2.csv"); //in 'pfad' ist jetzt der absolute Pfad zu 'datei.txt' gespeichert.
-
     std::ofstream outFile0(Slogpfad);           
-
     outFile0 << "Datum Zeit" << ";" << "Leitwert" << ";" << "Temperatur" <<std::endl;
-
     outFile0.close();
-
-
     //FILE *fp;
 
     //fp = fopen( Test, "w+");
 
-
-
     char Zielpfad[50];
 
     //strcpy(Zielpfad,"//192.168.70.73/SPS_Daten/");
-
     strcpy(Zielpfad,"//tbtvsrv01/DATASHARE/SPS_Daten/");
-
     strcat(Zielpfad,IPEndstellen);
-
     strcat(Zielpfad,"/LW.txt");
 
     //printf ("\r\nPfad: %s",&Zielpfad);
 
-  
     //Sendestring beschreiben Initial
 
     send[0] = 0xFE;
-
     send[1] = 0x00;
-
     send[2] = 0x3D;
 
     printf("Sende %2X%2X%2X\n\r",send[0],send[1],send[2]);  
 
     // Senden des Sendestrings Initial
-
     WriteFile (hCom, &send, 3, &iBytesWritten, NULL);
 
- 
         do  // in Endlos-Schleife auf Empfangssignale warten:
 
         {
-
-       
-
             WaitCommEvent (hCom, &dwEvtMask, &o); // Event mit Empfangssignalen verknüpfen
-
- 
 
                if (WAIT_OBJECT_0 == WaitForSingleObject (o.hEvent, INFINITE)) // warten bis Event
 
@@ -203,21 +147,12 @@ int main (int argc, char **argv)
                         { // Fehlerausgabe:
 
                             LPVOID lpMsgBuf;
-
                             FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
-
                             FORMAT_MESSAGE_IGNORE_INSERTS, NULL, GetLastError(),
-
                             MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-
-                            (LPTSTR) &lpMsgBuf, 0, NULL);
-
-                                                   
-
+                            (LPTSTR) &lpMsgBuf, 0, NULL);                     
                             MessageBox (NULL, (LPCTSTR)lpMsgBuf, "Error: ReadFile", MB_OK | MB_ICONINFORMATION);
-
                             LocalFree (lpMsgBuf);
-
                         }
 
                         else
@@ -416,11 +351,8 @@ int main (int argc, char **argv)
 
         while (1);
 
-
         CloseHandle (hCom);     // COM schließen
-
         CloseHandle (o.hEvent); // Event-Handle zurückgeben
-
 
         return (0);
 }
