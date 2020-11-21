@@ -1,0 +1,24 @@
+Aufgabe: Clean Code Development (22.Nov.)
+
+Werden sie ein 'bewußter' Clean Coder!
+
+A) erstellen sie sich ihre eigene Checkliste oder Ihr eingenes Cheat Sheet.
+
+B) Schreiben sie selbst ein kurzes Programm, welches nur perfekten Clean Code enthält!
+
+Alternativ können sie (beweisbar) eigenen Code nehmen und diesen von verschmutzt auf Clean refactoren.
+
+Für Ideen Googeln sie bitte 'Code Kata'.
+
+Z.B. reicht ein Tic-Tac-Toe oder das Streichholzspiel völlig aus!
+
+(Hinweis: Man hat eine Menge N an Streichhölzern. Man muss nun abwechseln 1-3 Hölzer wegnehmen. Zu implementieren ist eine Gewinnstrategie, bei der der Computer immer immer gewinnt, wenn er N vorgeben oder selbst anfangen darf!)
+
+Zwei Anmerkungen:
+
+    Das Spiel / der Code soll keine wilde Grafik enthalten. Ein bisschen Console reich völlig. Auf den Code kommt es an!
+    Die Zielsprache ist beliebig!
+
+Schreiben sie ein paar Sätze, warum das Clean Code ist!
+
+Viel Spaß!
