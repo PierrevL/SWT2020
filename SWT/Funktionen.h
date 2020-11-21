@@ -4,23 +4,86 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include "Globaldata.h"
 
- 
 
-void requestComport(char *comport){
 
-	printf ("Greisinger GMH 3400 einschalten und Datenkabel Verbinden");
-    printf ("\r\nPort angeben (BsP.:COM1): ");
-    scanf ("%5s",&comport);
-    printf ("\r\nPort angeben (BsP.:COM1): ");
-}
+class GUI {
+	
+	public: 
+	void requestComport(char *comport){
+		printf ("Greisinger GMH 3400 einschalten und Datenkabel Verbinden");
+	    printf ("\r\nPort angeben (BsP.:COM1): ");
+	    scanf ("%5s",&comport);
+	    printf ("\r\nPort angeben (BsP.:COM1): ");
+	}
+    public:
+    void requestIP(char *IPEndstellen){    
+	    printf ("\r\nGeraete IP Enstellen eingeben (BsP.: 65): ");
+	    scanf ("%5s",&IPEndstellen);
+	    printf ("\r\n"); 
+	}
+    public:
+	void FileHandleOK(Globaldata globaldata){
+		printf("Connect = ok, Handel: %d\n\r",globaldata.hCom);
+	}	
+};
+	
+class CONTROL {
+	
+	public:
+	bool isFileHandle(Globaldata globaldata){
+	    if (globaldata.hCom == INVALID_HANDLE_VALUE)
+	    { 
+	       return false; 
+	    }else{
+	    	return true;
+	    }		
+	}
+	
+	public:
+	void getFileHandle(Globaldata globaldata){
+		strcpy(globaldata.szCOM,globaldata.comport);
+	    memset (&globaldata.o, 0, sizeof (OVERLAPPED)); 
+	    globaldata.o.hEvent = CreateEvent (NULL, FALSE, FALSE, NULL); // einen Event setzten
+	    globaldata.hCom = CreateFile (globaldata.szCOM, GENERIC_WRITE | GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL); 
+	}	
+	
+	public:
+	void setTimer(Globaldata globaldata){
+		globaldata.ct.ReadIntervalTimeout         = 1000 / BD_RATE * (globaldata.dcb.ByteSize + (globaldata.dcb.Parity == NOPARITY ? 0 : 1) + (globaldata.dcb.StopBits == ONESTOPBIT ? 1 : 2)) * 2;
+	    globaldata.ct.ReadTotalTimeoutMultiplier  = 0;  // [ms] wird mit Read-Buffer-Size multipliziert
+	    globaldata.ct.ReadTotalTimeoutConstant    = 50; // wird an ReadTotalTimeoutMultiplier angehängt
+	    globaldata.ct.WriteTotalTimeoutMultiplier = 0;
+	    globaldata.ct.WriteTotalTimeoutConstant   = 0;
+	    SetCommTimeouts (globaldata.hCom, &globaldata.ct);
+	}
+	
+	public:
+	void setDataForhCom(Globaldata globaldata){	
+	 	globaldata.dcb.DCBlength = sizeof(DCB);  // Laenge des Blockes MUSS gesetzt sein!
+	    GetCommState (globaldata.hCom, &globaldata.dcb);    // COM-Einstellungen holen und aendern
+	    globaldata.dcb.BaudRate  = BD_RATE;      // Baudrate
+	    globaldata.dcb.ByteSize  = 8;            // Datenbits
+	    globaldata.dcb.Parity    = NOPARITY;     // Parität
+	    globaldata.dcb.StopBits  = ONESTOPBIT;   // Stopbits
+	    globaldata.dcb.fInX = false;
+	    globaldata.dcb.fOutX = false;
+	    globaldata.dcb.fOutxCtsFlow = false;
+	    globaldata.dcb.fOutxDsrFlow = false;
+	    globaldata.dcb.fDsrSensitivity = false;
+	    globaldata.dcb.fAbortOnError = false;
+	    globaldata.dcb.fBinary = true;
+	    globaldata.dcb.fDtrControl = DTR_CONTROL_ENABLE;
+	    globaldata.dcb.fRtsControl = RTS_CONTROL_DISABLE;
+ 	
+ 	}
+	
+};	
+	
 
-void requestIP(char *IPEndstellen){    
-    printf ("\r\nGeraete IP Enstellen eingeben (BsP.: 65): ");
-    scanf ("%5s",&IPEndstellen);
-    printf ("\r\n"); 
-  
-}
+
+
 
 inline unsigned int countdigits(unsigned int x)
 

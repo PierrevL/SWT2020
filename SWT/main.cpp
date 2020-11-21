@@ -8,89 +8,38 @@
 #include <sstream>
 #include <iostream>
 #include <direct.h>
-#include "Globaldata.h"
 #define COM_BUFFER_SIZE 256       // Read- und Write-Buffer-Size
-
 #define BD_RATE         CBR_4800 // 9600 Baud
-
-
-
 
 // Hauptprogramm
 
 int main (int argc, char **argv)
 
 {
-                                         
-    DCB           dcb;   
-    DWORD         iBytesWritten;
-    BOOL          bRet      = true;
-    DWORD         dwRead    = 0;
-    DWORD         dwWrite    = 0;
-    DWORD         dwSetMask = EV_RXCHAR | EV_ERR;
-    DWORD         dwEvtMask;
-    OVERLAPPED    o;
-    COMMTIMEOUTS  ct;
-    
     Globaldata globaldata;
-	printf("%d",globaldata.test);
-	
-
-
-	requestComport(globaldata.comport);
-    requestIP(globaldata.IPEndstellen);
-    strcpy(globaldata.szCOM,globaldata.comport);
-
-    memset (&o, 0, sizeof (OVERLAPPED)); 
-
-    o.hEvent = CreateEvent (NULL, FALSE, FALSE, NULL); // einen Event setzten
-
-    HANDLE hCom = CreateFile (globaldata.szCOM, GENERIC_WRITE | GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);      
-
-    if (hCom == INVALID_HANDLE_VALUE)
-    { 
-       LPVOID lpMsgBuf;
-       FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, GetLastError(),
-
-                      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &lpMsgBuf, 0, NULL);
-
-       MessageBox (NULL, (LPCTSTR)lpMsgBuf, "Error: Conection", MB_OK | MB_ICONINFORMATION);
-       LocalFree (lpMsgBuf);
-       return (1); 
-    }else{
-         printf("Connect = ok, Handel: %d\n\r",hCom);
-    }
-
-    dcb.DCBlength = sizeof(DCB);  // Laenge des Blockes MUSS gesetzt sein!
-    GetCommState (hCom, &dcb);    // COM-Einstellungen holen und aendern
-    dcb.BaudRate  = BD_RATE;      // Baudrate
-    dcb.ByteSize  = 8;            // Datenbits
-    dcb.Parity    = NOPARITY;     // Parität
-    dcb.StopBits  = ONESTOPBIT;   // Stopbits
-    dcb.fInX = false;
-    dcb.fOutX = false;
-    dcb.fOutxCtsFlow = false;
-    dcb.fOutxDsrFlow = false;
-    dcb.fDsrSensitivity = false;
-    dcb.fAbortOnError = false;
-    dcb.fBinary = true;
-    dcb.fDtrControl = DTR_CONTROL_ENABLE;
-    dcb.fRtsControl = RTS_CONTROL_DISABLE;
-    SetCommState (hCom, &dcb);    // COM-Einstellungen speichern
-    GetCommTimeouts (hCom, &ct);
+    GUI gui;
+    CONTROL control;
+    
+	gui.requestComport(globaldata.comport);
+    gui.requestIP(globaldata.IPEndstellen);
+    control.getFileHandle(globaldata);
+    
+    if (control.isFileHandle(globaldata)){
+    	gui.FileHandleOK(globaldata);
+	}else{
+		return (1); // exit
+	}
+    
+	control.setDataForhCom(globaldata);
+    SetCommState (globaldata.hCom, &globaldata.dcb);    // COM-Einstellungen speichern
+    GetCommTimeouts (globaldata.hCom, &globaldata.ct);
 
     // Warte-Zeit [ms] vom Beginn eines Bytes bis zum Beginn des nächsten Bytes
-    ct.ReadIntervalTimeout         = 1000 / BD_RATE * (dcb.ByteSize + (dcb.Parity == NOPARITY ? 0 : 1) + (dcb.StopBits == ONESTOPBIT ? 1 : 2)) * 2;
-    ct.ReadTotalTimeoutMultiplier  = 0;  // [ms] wird mit Read-Buffer-Size multipliziert
-    ct.ReadTotalTimeoutConstant    = 50; // wird an ReadTotalTimeoutMultiplier angehängt
-    ct.WriteTotalTimeoutMultiplier = 0;
-    ct.WriteTotalTimeoutConstant   = 0;
-    SetCommTimeouts (hCom, &ct);
+    control.setTimer(globaldata);
 
     // Zwischenspeicher des serial-Drivers einstellen (für read und write):
-
-    SetupComm (hCom, COM_BUFFER_SIZE, COM_BUFFER_SIZE);
-    SetCommMask (hCom, dwSetMask); // globaldata.empfangssignale definieren
+    SetupComm (globaldata.hCom, COM_BUFFER_SIZE, COM_BUFFER_SIZE);
+    SetCommMask (globaldata.hCom, globaldata.dwSetMask); // globaldata.empfangssignale definieren
 
     //char Test[256];
     char Slogpfad[256]; //hier wird der Programmpfad gespeichert
@@ -112,22 +61,22 @@ int main (int argc, char **argv)
     printf("Sende %2X%2X%2X\n\r",globaldata.send[0],globaldata.send[1],globaldata.send[2]);  
 
     // Senden des Sendestrings Initial
-    WriteFile (hCom, &globaldata.send, 3, &iBytesWritten, NULL);
+    WriteFile (globaldata.hCom, &globaldata.send, 3, &globaldata.iBytesWritten, NULL);
 
         do  // in Endlos-Schleife auf Empfangssignale warten:
 
         {
-            WaitCommEvent (hCom, &dwEvtMask, &o); // Event mit globaldata.empfangssignalen verknüpfen
+            WaitCommEvent (globaldata.hCom, &globaldata.dwEvtMask, &globaldata.o); // Event mit globaldata.empfangssignalen verknüpfen
 
-               if (WAIT_OBJECT_0 == WaitForSingleObject (o.hEvent, INFINITE)) // warten bis Event
+               if (WAIT_OBJECT_0 == WaitForSingleObject (globaldata.o.hEvent, INFINITE)) // warten bis Event
 
                {            
-                    if (dwEvtMask & EV_RXCHAR) // Zeichen an RxD empfangen:
+                    if (globaldata.dwEvtMask & EV_RXCHAR) // Zeichen an RxD empfangen:
 
                     {
-                        bRet = ReadFile (hCom, globaldata.empfang, 100, &dwRead,NULL);
+                        globaldata.bRet = ReadFile (globaldata.hCom, globaldata.empfang, 100, &globaldata.dwRead,NULL);
                                                                                                             
-                        if (!bRet)
+                        if (!globaldata.bRet)
                         { // Fehlerausgabe:
 
                             LPVOID lpMsgBuf;
@@ -244,54 +193,36 @@ int main (int argc, char **argv)
                                              // 900 ms warten           
 
                                               }
-
                                             globaldata.send[0] = 0xFE;
-
                                   			globaldata.send[1] = 0x00;
-
                                   			globaldata.send[2] = 0x3D;
-
-                                            break;
-                                           
+                                            break;        
                                             default:
-
                                             globaldata.send[0] = 0xFD;
-
                                       		globaldata.send[1] = 0x00;
-
                                       		globaldata.send[2] = 0x02; 
-
                                             break;
-
-             }
-                                                                                                                         
+             }                                                                                                                
                                     // Sendeanfrage erneut senden
 
-                                    WriteFile (hCom, &globaldata.send, 3, &iBytesWritten, NULL); // Senden der Bytes
+                                    WriteFile (globaldata.hCom, &globaldata.send, 3, &globaldata.iBytesWritten, NULL); // Senden der Bytes
 
                                             Sleep(900);       
                                }
                        }
 
-                       if (dwEvtMask & EV_ERR)
-
+                       if (globaldata.dwEvtMask & EV_ERR)
                        {
-
                                MessageBox (NULL, "Error empfangen", "Error: ReadFile", MB_OK);
-
                                break; // Schleifen-Abbruch
-
                        }
-
                }
 
         }
 
         while (1);
-
-        CloseHandle (hCom);     // COM schließen
-        CloseHandle (o.hEvent); // Event-Handle zurückgeben
-
+        CloseHandle (globaldata.hCom);     // COM schließen
+        CloseHandle (globaldata.o.hEvent); // Event-Handle zurückgeben
         return (0);
 }
 
